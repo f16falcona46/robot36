@@ -1,6 +1,6 @@
-
-CFLAGS = -g -DUP=0 -DDN=1 -D_GNU_SOURCE=1 -W -Wall -O3 -std=c99 -fno-math-errno -ffinite-math-only -fno-rounding-math -fno-signaling-nans -fno-trapping-math -fcx-limited-range -fsingle-precision-constant $(shell sdl-config --cflags)
-LDLIBS = -lm -lasound $(shell sdl-config --libs)
+CC=gcc
+CFLAGS = -g -DUP=0 -DDN=1 -D_GNU_SOURCE=1 -W -Wall -O3 -std=c99 -fno-math-errno -ffinite-math-only -fno-rounding-math -fno-signaling-nans -fno-trapping-math -fcx-limited-range -fsingle-precision-constant
+LDLIBS = -lm
 
 all: encode decode debug
 
@@ -26,9 +26,9 @@ clean:
 	echo 'plot "$<" u 1:2 w l t "data", "$<" u 1:3 w l t "control", "$<" u 1:4 w l t "sync", "$<" u 1:5 w l t "leader", "$<" u 1:6 w l t "break", "$<" u 1:7 w l t "vis ss", "$<" u 1:8 w l t "vis lo", "$<" u 1:9 w l t "vis hi", "$<" u 1:10 w l t "even", "$<" u 1:11 w l t "odd"' > $@
 
 
-encode: encode.o mmap_file.o pcm.o wav.o alsa.o yuv.o img.o ppm.o sdl.o
+encode: encode.o mmap_file.o pcm.o wav.o yuv.o img.o ppm.o
 
-decode: decode.o mmap_file.o pcm.o wav.o alsa.o window.o ddc.o buffer.o yuv.o img.o ppm.o sdl.o
+decode: decode.o mmap_file.o pcm.o wav.o window.o ddc.o buffer.o yuv.o img.o ppm.o
 
-debug: debug.o mmap_file.o pcm.o wav.o alsa.o window.o ddc.o buffer.o yuv.o img.o ppm.o sdl.o
+debug: debug.o mmap_file.o pcm.o wav.o window.o ddc.o buffer.o yuv.o img.o ppm.o
 
