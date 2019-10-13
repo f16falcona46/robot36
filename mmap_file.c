@@ -17,8 +17,6 @@ struct fake_mmap_file {
 	char* fname;
 };
 
-#define DATA_OFFSET (sizeof(size_t) + sizeof(size_t) + sizeof(char*))
-
 int mmap_file_ro(void **p, const char *name, size_t *size)
 {
 	*size = 0;
@@ -60,7 +58,7 @@ int mmap_file_rw(void **p, const char *name, size_t size)
 }
 int munmap_file(void *p, size_t size)
 {
-	struct fake_mmap_file *f = (struct fake_mmap_file *)(((char*) p) - DATA_OFFSET);
+	struct fake_mmap_file *f = (struct fake_mmap_file *)(((char*) p) - sizeof(struct fake_mmap_file*));
 	int success = 1;
 	if (f->write_on_close) {
 		FILE* file = fopen(f->fname, "wb");
