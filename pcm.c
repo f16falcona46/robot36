@@ -10,7 +10,6 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include <string.h>
 #include <stdlib.h>
 #include "pcm.h"
-#include "alsa.h"
 #include "wav.h"
 
 void close_pcm(struct pcm *pcm)
@@ -45,8 +44,6 @@ int write_pcm(struct pcm *pcm, short *buff, int frames)
 
 int open_pcm_read(struct pcm **p, char *name)
 {
-	if (strstr(name, "plughw:") == name || strstr(name, "hw:") == name || strstr(name, "default") == name)
-		return open_alsa_read(p, name);
 	if (strstr(name, ".wav") == (name + (strlen(name) - strlen(".wav"))))
 		return open_wav_read(p, name);
 	return 0;
@@ -54,8 +51,6 @@ int open_pcm_read(struct pcm **p, char *name)
 
 int open_pcm_write(struct pcm **p, char *name, int rate, int channels, float seconds)
 {
-	if (strstr(name, "plughw:") == name || strstr(name, "hw:") == name || strstr(name, "default") == name)
-		return open_alsa_write(p, name, rate, channels, seconds);
 	if (strstr(name, ".wav") == (name + (strlen(name) - strlen(".wav"))))
 		return open_wav_write(p, name, rate, channels, seconds);
 	return 0;

@@ -7,101 +7,76 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 
 
 #include <stdio.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 #include "mmap_file.h"
 
-int mmap_file_ro(void **p, char *name, size_t *size)
+struct fake_mmap_file {
+	size_t write_on_close;
+	size_t size;
+	char* fname;
+};
+
+#define DATA_OFFSET (sizeof(size_t) + sizeof(size_t) + sizeof(char*))
+
+int mmap_file_ro(void **p, const char *name, size_t *size)
 {
 	*size = 0;
-	int fd = open(name, O_RDONLY);
-	if (fd == -1) {
-		perror("open");
+	FILE *file = fopen(name, "rb");
+	if (!file) return 0;
+	fseek(file, 0, SEEK_END);
+	long fsize = ftell(file);
+	*size = fsize;
+	fseek(file, 0, SEEK_SET);
+	
+	struct fake_mmap_file *f = malloc(sizeof(struct fake_mmap_file) + fsize);
+	if (!f) {
+		fclose(file);
 		return 0;
 	}
-
-	struct stat sb;
-	if (fstat(fd, &sb) == -1) {
-		perror("fstat");
-		close(fd);
-		return 0;
-	}
-
-	if (!S_ISREG(sb.st_mode)) {
-		fprintf(stderr, "%s not a file\n", name);
-		close(fd);
-		return 0;
-	}
-
-	*p = mmap(0, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (*p == MAP_FAILED) {
-		perror("mmap");
-		close(fd);
-		return 0;
-	}
-
-	if (close(fd) == -1) {
-		perror ("close");
-		return 0;
-	}
-	*size = sb.st_size;
+	*p = ((char*) f) + sizeof(struct fake_mmap_file);
+	f->write_on_close = 0;
+	f->size = fsize;
+	f->fname = NULL;
+	fread(*p, 1, fsize, file);
+	fclose(file);
 	return 1;
 }
 
-int mmap_file_rw(void **p, char *name, size_t size)
+int mmap_file_rw(void **p, const char *name, size_t size)
 {
-	int fd = open(name, O_RDWR|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-	if (fd == -1) {
-		perror("open");
+	struct fake_mmap_file *f = calloc(sizeof(struct fake_mmap_file) + size, 1);
+	if (!f) return 0;
+	*p = ((char*) f) + sizeof(struct fake_mmap_file);
+	f->write_on_close = 1;
+	f->size = size;
+	f->fname = malloc(strlen(name) + 1);
+	if (!f->fname) {
+		free(f);
 		return 0;
 	}
-
-	struct stat sb;
-	if (fstat(fd, &sb) == -1) {
-		perror("fstat");
-		close(fd);
-		return 0;
-	}
-
-	if (!S_ISREG(sb.st_mode)) {
-		fprintf(stderr, "%s not a file\n", name);
-		close(fd);
-		return 0;
-	}
-
-	if (lseek(fd, size - 1, SEEK_SET) == -1) {
-		perror("lseek");
-		close(fd);
-		return 0;
-	}
-
-	if (write(fd, "", 1) != 1) {
-		perror("write");
-		close(fd);
-		return 0;
-	}
-
-	*p = mmap(0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-	if (*p == MAP_FAILED) {
-		perror("mmap");
-		close(fd);
-		return 0;
-	}
-
-	if (close(fd) == -1) {
-		perror ("close");
-		return 0;
-	}
+	strcpy(f->fname, name);
 	return 1;
 }
 int munmap_file(void *p, size_t size)
 {
-	if (munmap(p, size) == -1) {
-		perror("munmap");
-		return 0;
+	struct fake_mmap_file *f = (struct fake_mmap_file *)(((char*) p) - DATA_OFFSET);
+	int success = 1;
+	if (f->write_on_close) {
+		FILE* file = fopen(f->fname, "wb");
+		if (!file) {
+			success = 0;
+		}
+		else {
+			size_t written = fwrite(p, 1, f->size, file);
+			if (written != f->size) {
+				success = 0;
+			}
+			fclose(file);
+		}
 	}
-	return 1;
+	free(f->fname);
+	free(f);
+	return success;
 }
 

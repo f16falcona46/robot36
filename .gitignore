@@ -2,6 +2,7 @@ encode
 decode
 debug
 *.o
+*.exe
 11025.ppm
 11025.wav
 11025.dat

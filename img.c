@@ -9,7 +9,6 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include <string.h>
 #include "img.h"
 #include "ppm.h"
-#include "sdl.h"
 
 void close_img(struct img *img)
 {
@@ -27,8 +26,6 @@ int open_img_write(struct img **p, char *name, int width, int height)
 {
 	if (strstr(name, ".ppm") == (name + (strlen(name) - strlen(".ppm"))))
 		return open_ppm_write(p, name, width, height);
-	if (strstr(name, "sdl:") == name)
-		return open_sdl_write(p, name, width, height);
 	return 0;
 }
 

@@ -7,7 +7,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 
 #ifndef MMAP_FILE_H
 #define MMAP_FILE_H
-int mmap_file_ro(void **, char *, size_t *);
-int mmap_file_rw(void **, char *, size_t);
+int mmap_file_ro(void **, const char *, size_t *);
+int mmap_file_rw(void **, const char *, size_t);
 int munmap_file(void *, size_t);
 #endif
